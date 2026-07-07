@@ -38,7 +38,37 @@
 
 > **논문 수준 재현 성공** — XGBoost 튜닝으로 AUC 0.652 달성
 
+### Confusion Matrix (XGBoost 튜닝)
+
+<img src="images/confusion_matrix.png" width="500">
+
+| | 실제: No readmit | 실제: Readmit <30 |
+|---|---|---|
+| **예측: No readmit** | 9,114 | 640 |
+| **예측: Readmit <30** | 3,667 | 618 |
+
+재입원 환자 1,258명 중 618명을 식별했다(Recall 0.49). 다만 재입원으로 예측된
+4,285명 중 실제 재입원은 618명뿐이라(Precision 0.14), 나머지 3,667명은
+불필요하게 고위험군으로 분류된 것이다. 헬스케어 맥락에서는 재입원 환자를
+놓치는 비용이 더 크다고 보고 이 트레이드오프를 감수했다.
+
 ### 재입원 예측 주요 요인 (SHAP)
+
+#### 전체 변수 중요도
+
+<img src="images/shap_bar.png" width="600">
+
+mean(|SHAP value|) 기준 상위 변수. `number_inpatient`(입원 전 1년간 입원 횟수),
+`discharge_disposition_id_Other`/`_3`(요양원·기타 퇴원 형태), `time_in_hospital`이
+가장 강한 예측 변수로 나타났다.
+
+#### 방향성 + 크기 (Beeswarm)
+
+<img src="images/shap_beeswarm.png" width="600">
+
+빨간 점(변수값 높음)이 오른쪽(재입원 확률 높임)으로 강하게 퍼진 변수일수록
+영향력이 크다. `number_inpatient`는 극단값에서 SHAP 값이 1.5까지 나타나
+다른 변수와 격차가 크다.
 
 **재입원 확률을 높이는 요인:**
 - `number_inpatient` — 입원 전 1년간 입원 횟수 (가장 강한 예측 변수)
@@ -49,6 +79,17 @@
 **재입원 확률을 낮추는 요인:**
 - `diag_1_cate_Respiratory` — 호흡기 주진단 (급성 질환, 회복 명확)
 - `metformin_YN` — 메트포르민 처방 (체계적 당뇨 관리 신호)
+
+#### 개별 환자 해석 (Force Plot / Waterfall Plot)
+
+<img src="images/shap_force.png" width="700">
+
+<img src="images/shap_waterfall.png" width="600">
+
+특정 환자 1명을 예로 든 해석. base value(전체 평균 재입원 확률)에서 출발해
+이 환자는 당뇨약 미처방, 입원 기간 1일, 최근 입원 이력 없음 등의 이유로
+최종 예측값이 낮아졌다(f(x) = -0.58). 이런 개별 설명은 임상 담당자가
+"왜 이 환자가 고위험/저위험으로 분류됐는지" 납득하는 데 쓰일 수 있다.
 
 ---
 
